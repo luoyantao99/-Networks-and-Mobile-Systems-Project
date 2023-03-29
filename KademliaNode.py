@@ -54,14 +54,14 @@ class KademliaNode:
         self.routing_table = RoutingTable(k)
         self.storage = {}
 
+    def distance_to(self, other_id):
+        return self.id ^ other_id
+
     def store(self, key, value):
         self.storage[key] = value
 
     def retrieve(self, key):
         return self.storage.get(key)
-
-    def distance_to(self, other_id):
-        return self.id ^ other_id
 
     def find_node(self, target_id):
         return self.routing_table.find_closest_nodes(target_id)
