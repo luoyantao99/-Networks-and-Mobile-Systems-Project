@@ -1,5 +1,5 @@
-import NodeID
-import RoutingTable
+from NodeID import NodeID
+from RoutingTable import RoutingTable
 
 class KademliaNode:
     def __init__(self, k=20):
@@ -76,4 +76,4 @@ class KademliaNode:
         # Normally, you would send FIND_NODE RPCs to the closest nodes
         # For simplicity, we simulate the process by updating the routing table
         for node in closest_nodes:
-            self.routing_table.add(node.node_id)
+            self.routing_table.add(node)
