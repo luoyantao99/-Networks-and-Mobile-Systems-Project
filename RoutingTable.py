@@ -1,4 +1,4 @@
-import KBucket
+from KBucket import KBucket
 from collections import deque
 
 class RoutingTable:
