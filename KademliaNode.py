@@ -6,6 +6,9 @@ class KBucket:
         self.k = k
         self.nodes = []
 
+    def all_bucket_nodes(self):
+        return self.nodes
+
     def add(self, node):
         if node not in self.nodes:
             if len(self.nodes) < self.k:
@@ -45,6 +48,16 @@ class RoutingTable:
     def get_bucket_index(self, node_id):
         return self.id_bits - node_id.bit_length()
 
+    def get_random_node(self):
+        '''get a random node for query success rate testing'''
+        all_nodes = []
+        for i in range(len(self.buckets)):
+            all_nodes.extend(self.buckets[i].all_bucket_nodes())
+        if not all_nodes:
+            return None
+        return random.choice(all_nodes).get_id()
+
+
 class KademliaNode:
     def __init__(self, id=None, k=20):
         if id is None:
@@ -54,8 +67,11 @@ class KademliaNode:
         self.routing_table = RoutingTable(k)
         self.storage = {}
 
-    def distance_to(self, other_id):
-        return self.id ^ other_id
+    def get_id(self):
+        return self.id
+
+    def ping(self, target_id):
+        pass
 
     def store(self, key, value):
         self.storage[key] = value
@@ -63,11 +79,20 @@ class KademliaNode:
     def retrieve(self, key):
         return self.storage.get(key)
 
+    def distance_to(self, other_id):
+        return self.id ^ other_id
+
     def find_node(self, target_id):
         return self.routing_table.find_closest_nodes(target_id)
 
+    def find_value(self, target_id):
+        pass
+
     def join_network(self, bootstrap_node):
         self.routing_table.add(bootstrap_node)
+
+    def get_random_node(self):
+        return self.routing_table.get_random_node()
 
 def hash_function(value):
     return int(hashlib.sha1(value.encode()).hexdigest(), 16)

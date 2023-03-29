@@ -47,9 +47,12 @@ class KademliaSimulation:
         for node in self.nodes:
             for _ in range(5):  # 5 queries per node
                 num_queries += 1
-                target_id = random.getrandbits(160)
+                target_id = node.get_random_node()
                 start_time = time.perf_counter()
-                closest_nodes = node.find_node(target_id)
+                closest_nodes = None
+                if target_id:
+                    closest_nodes = node.find_node(target_id)
+
                 latency = time.perf_counter() - start_time
                 total_latency += latency
 
