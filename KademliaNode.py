@@ -9,6 +9,12 @@ class KBucket:
     def all_bucket_nodes(self):
         return self.nodes
 
+    def one_bucket_nodeIDs(self):
+        nodeID_list = []
+        for node in self.nodes:
+            nodeID_list.append(node.id)
+        return nodeID_list
+
     def add(self, node):
         if node not in self.nodes:
             if len(self.nodes) < self.k:
@@ -42,8 +48,18 @@ class RoutingTable:
 
     def find_closest_nodes(self, target_id):
         bucket_index = self.get_bucket_index(target_id)
-        closest_nodes = self.buckets[bucket_index].nodes
-        return sorted(closest_nodes, key=lambda n: n.distance_to(target_id))[:self.k]
+
+        # if target ID is found in the caller node's bucket, which means exact hit
+        if self.buckets[bucket_index].one_bucket_nodeIDs() and target_id in self.buckets[bucket_index].one_bucket_nodeIDs():
+            for node in self.buckets[bucket_index].nodes:
+                if node.id == target_id:
+                    return [node]
+
+        # else, get the closest K nodes that has closest distance to the target id
+        all_nodes = []
+        for bucket in self.buckets:
+            all_nodes.extend(bucket.all_bucket_nodes())
+        return sorted(all_nodes, key=lambda n: n.distance_to(target_id))[:self.k]
 
     def get_bucket_index(self, node_id):
         return self.id_bits - node_id.bit_length()
@@ -55,7 +71,7 @@ class RoutingTable:
             all_nodes.extend(self.buckets[i].all_bucket_nodes())
         if not all_nodes:
             return None
-        return random.choice(all_nodes).get_id()
+        return random.choice(all_nodes)
 
 
 class KademliaNode:
@@ -90,6 +106,7 @@ class KademliaNode:
 
     def join_network(self, bootstrap_node):
         self.routing_table.add(bootstrap_node)
+        bootstrap_node.find_node(self.id)
 
     def get_random_node(self):
         return self.routing_table.get_random_node()

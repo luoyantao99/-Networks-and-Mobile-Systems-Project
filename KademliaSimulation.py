@@ -47,19 +47,25 @@ class KademliaSimulation:
         for node in self.nodes:
             for _ in range(5):  # 5 queries per node
                 num_queries += 1
-                target_id = node.get_random_node()
+
+                closest_nodes, target_id = None, None
+                target_node = node.get_random_node()
+                if target_node:
+                    target_id = target_node.get_id()
                 start_time = time.perf_counter()
-                closest_nodes = None
+
                 if target_id:
                     closest_nodes = node.find_node(target_id)
 
                 latency = time.perf_counter() - start_time
                 total_latency += latency
 
-                if closest_nodes:
+                if closest_nodes and target_node in closest_nodes:
                     num_successes += 1
-
-            total_routing_table_size += sum(len(bucket) for bucket in node.routing_table.buckets)
+            # for bucket in node.routing_table.buckets:
+            #     print(bucket.all_bucket_nodes())
+            # print()
+            total_routing_table_size += sum(len(bucket.all_bucket_nodes()) for bucket in node.routing_table.buckets)
 
         success_rate = num_successes / num_queries
         avg_latency = total_latency / num_queries
@@ -76,4 +82,4 @@ for churn_rate in churn_rates:
     print(f"Churn rate {churn_rate}:")
     print(f"  - Average query success rate: {np.mean(results[churn_rate]['success_rate'])}")
     print(f"  - Average lookup latency: {np.mean(results[churn_rate]['latency'])} seconds")
-    print(f"  - Average routing table size: {np.mean(results[churn_rate]['avg_routing_table_size'])}")
+    # print(f"  - Average routing table size: {np.mean(results[churn_rate]['avg_routing_table_size'])}")
