@@ -4,6 +4,13 @@ import numpy as np
 import random
 from collections import defaultdict
 
+import argparse
+import logging
+import asyncio
+
+from kademlia.network import Server
+server = Server()
+
 class KademliaSimulation:
     def __init__(self, churn_rates, num_nodes=100, num_iterations=100, k=20):
         self.churn_rates = churn_rates
@@ -11,6 +18,7 @@ class KademliaSimulation:
         self.num_iterations = num_iterations
         self.k = k
         self.nodes = []
+        # self.server = Server()
 
     def run(self):
         results = defaultdict(lambda: defaultdict(list))
@@ -24,12 +32,53 @@ class KademliaSimulation:
                 results[churn_rate]["latency"].append(latency)
                 results[churn_rate]["avg_routing_table_size"].append(avg_routing_table_size)
         return results
+    
+    
+    def connect_to_bootstrap_node(self, bootstrap_ip, bootstrap_port, port_num):
+        loop = asyncio.get_event_loop()
+        loop.set_debug(True)
+
+        loop.run_until_complete(server.listen(port_num))
+        bootstrap_node = (bootstrap_ip, bootstrap_port)
+        loop.run_until_complete(server.bootstrap([bootstrap_node]))
+
+        try:
+            loop.run_forever()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            server.stop()
+            loop.close()
+
+
+    def create_bootstrap_node(self):
+        loop = asyncio.get_event_loop()
+        loop.set_debug(True)
+
+        loop.run_until_complete(server.listen(8468))
+
+        try:
+            loop.run_forever()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            server.stop()
+            loop.close()
+
 
     def initialize_nodes(self):
-        self.nodes = [KademliaNode() for _ in range(self.num_nodes)]
-        bootstrap_node = self.nodes[0]
-        for node in self.nodes[1:]:
-            node.join_network(bootstrap_node)
+        self.create_bootstrap_node()
+        for i in range(self.num_nodes): 
+            self.connect_to_bootstrap_node("0.0.0.0", 8468, i+8469)
+        
+        print("nodes initialized")
+
+
+
+        # self.nodes = [KademliaNode() for _ in range(self.num_nodes)]
+        # bootstrap_node = self.nodes[0]
+        # for node in self.nodes[1:]:
+        #     node.join_network(bootstrap_node)
 
     def simulate_churn(self, churn_rate):
         churned_nodes = set(random.sample(self.nodes, int(churn_rate * self.num_nodes)))
