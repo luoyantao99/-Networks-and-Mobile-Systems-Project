@@ -1,134 +1,70 @@
-from KademliaNode import KademliaNode
-import time
-import numpy as np
 import random
-from collections import defaultdict
-
-import argparse
-import logging
 import asyncio
-
 from kademlia.network import Server
-server = Server()
 
-class KademliaSimulation:
-    def __init__(self, churn_rates, num_nodes=100, num_iterations=100, k=20):
-        self.churn_rates = churn_rates
-        self.num_nodes = num_nodes
-        self.num_iterations = num_iterations
-        self.k = k
-        self.nodes = []
-        # self.server = Server()
 
-    def run(self):
-        results = defaultdict(lambda: defaultdict(list))
-        for churn_rate in self.churn_rates:
-            print(f"Running simulation for churn rate {churn_rate}")
-            for _ in range(self.num_iterations):
-                self.initialize_nodes()
-                self.simulate_churn(churn_rate)
-                success_rate, latency, avg_routing_table_size = self.measure_performance()
-                results[churn_rate]["success_rate"].append(success_rate)
-                results[churn_rate]["latency"].append(latency)
-                results[churn_rate]["avg_routing_table_size"].append(avg_routing_table_size)
-        return results
-    
-    
-    def connect_to_bootstrap_node(self, bootstrap_ip, bootstrap_port, port_num):
-        loop = asyncio.get_event_loop()
-        loop.set_debug(True)
+async def create_and_bootstrap_node(port, bootstrap_node):
+    node = Server()
+    await node.listen(port)
+    await node.bootstrap(bootstrap_node)
+    return node
 
-        loop.run_until_complete(server.listen(port_num))
-        bootstrap_node = (bootstrap_ip, bootstrap_port)
-        loop.run_until_complete(server.bootstrap([bootstrap_node]))
 
+async def set_key_value(node, key, value):
+    await node.set(key, value)
+
+
+async def get_value(node, key):
+    return await node.get(key)
+
+
+def get_random_node(nodes):
+    return random.choice(list(nodes.values()))
+
+
+def get_random_key():
+    return "key {}".format(random.randint(1, 100))
+
+
+async def run():
+    node_dict = {}
+    initial_node = Server()
+    await initial_node.listen(8479)
+    port = 8480
+    for i in range(100):
+        key = i
+        value = Server()
+        node_dict[key] = value
+        await node_dict[key].listen(port, "192.168.1.233")
+        await node_dict[key].bootstrap([("192.168.1.233", port-1)])
+        port += 1
+        await node_dict[key].set("key %s" % (key), "value %s" % (key))
+    # print("Setting complete")
+    # print(node_dict[0].retrieve_storage().values())
+    # print(node_dict[0].bootstrappable_neighbors())
+
+    # Simulate node churn
+    churn_rate = 0.2  # Change the churn rate as needed
+    churn_count = int(len(node_dict) * churn_rate)
+    for _ in range(churn_count):
+        churned_node_key = random.choice(list(node_dict.keys()))
+        churned_node = node_dict.pop(churned_node_key)
+        churned_node.stop()
+
+    # Calculate success rate
+    success_count = 0
+    total_count = 0
+    for i in range(100):
         try:
-            loop.run_forever()
-        except KeyboardInterrupt:
-            pass
-        finally:
-            server.stop()
-            loop.close()
+            result = await node_dict[0].get("key %s" % (i))
+            if result == "value %s" % (i):
+                success_count += 1
+            total_count += 1
+        except Exception as e:
+            print("Error fetching value for key {}: {}".format(i, e))
+            total_count += 1
 
+    success_rate = success_count / total_count
+    print("Success rate: {:.2f}".format(success_rate))
 
-    def create_bootstrap_node(self):
-        loop = asyncio.get_event_loop()
-        loop.set_debug(True)
-
-        loop.run_until_complete(server.listen(8468))
-
-        try:
-            loop.run_forever()
-        except KeyboardInterrupt:
-            pass
-        finally:
-            server.stop()
-            loop.close()
-
-
-    def initialize_nodes(self):
-        self.create_bootstrap_node()
-        for i in range(self.num_nodes): 
-            self.connect_to_bootstrap_node("0.0.0.0", 8468, i+8469)
-        
-        print("nodes initialized")
-
-
-
-        # self.nodes = [KademliaNode() for _ in range(self.num_nodes)]
-        # bootstrap_node = self.nodes[0]
-        # for node in self.nodes[1:]:
-        #     node.join_network(bootstrap_node)
-
-    def simulate_churn(self, churn_rate):
-        churned_nodes = set(random.sample(self.nodes, int(churn_rate * self.num_nodes)))
-        for node in churned_nodes:
-            self.nodes.remove(node)
-            for remaining_node in self.nodes:
-                remaining_node.routing_table.remove(node)
-
-    def measure_performance(self):
-        num_queries = 0
-        num_successes = 0
-        total_latency = 0
-        total_routing_table_size = 0
-
-        for node in self.nodes:
-            for _ in range(5):  # 5 queries per node
-                num_queries += 1
-
-                closest_nodes, target_id = None, None
-                target_node = node.get_random_node()
-                if target_node:
-                    target_id = target_node.get_id()
-                start_time = time.perf_counter()
-
-                if target_id:
-                    closest_nodes = node.find_node(target_id)
-
-                latency = time.perf_counter() - start_time
-                total_latency += latency
-
-                if closest_nodes and target_node in closest_nodes:
-                    num_successes += 1
-            # for bucket in node.routing_table.buckets:
-            #     print(bucket.all_bucket_nodes())
-            # print()
-            total_routing_table_size += sum(len(bucket.all_bucket_nodes()) for bucket in node.routing_table.buckets)
-
-        success_rate = num_successes / num_queries
-        avg_latency = total_latency / num_queries
-        avg_routing_table_size = total_routing_table_size / len(self.nodes)
-
-        return success_rate, avg_latency, avg_routing_table_size
-
-
-churn_rates = [0.1, 0.25, 0.5, 0.75]
-simulation = KademliaSimulation(churn_rates)
-results = simulation.run()
-
-for churn_rate in churn_rates:
-    print(f"Churn rate {churn_rate}:")
-    print(f"  - Average query success rate: {np.mean(results[churn_rate]['success_rate'])}")
-    print(f"  - Average lookup latency: {np.mean(results[churn_rate]['latency'])} seconds")
-    # print(f"  - Average routing table size: {np.mean(results[churn_rate]['avg_routing_table_size'])}")
+asyncio.run(run())
