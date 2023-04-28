@@ -1,9 +1,11 @@
+from itertools import count
 import random
 import asyncio
 from kademlia.network import Server
 import socket
 import threading
 import keyboard
+import time
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -44,6 +46,7 @@ async def run():
     ip = get_local_ip()
     port = 8480
 
+    # initial
     for i in range(initial_node_num):
         key = i
         value = Server()
@@ -56,25 +59,54 @@ async def run():
     # print(node_dict[0].retrieve_storage().values())
     # print(node_dict[0].bootstrappable_neighbors())
 
-
     churn_rate = 0.2  # Change the churn rate as needed
-    churn_count = int(initial_node_num * churn_rate)
+    churn_count = int(len(node_dict) * churn_rate)
 
     global esc
-    global success
+    global cal_rate
 
+    count = 0
     while True:
         # Simulate node churn
         for _ in range(churn_count):
-            churned_node_key = random.choice(list(node_dict.keys()))
-            churned_node = node_dict.pop(churned_node_key)
-            churned_node.stop()
+            if len(node_dict) == 0:
+                print("No node survived")
+                return
 
+            if random.choice([0,1]) == 0: # out
+                print("node out")
+                churned_node_key = random.choice(list(node_dict.keys()))
+                churned_node = node_dict.pop(churned_node_key)
+                churned_node.stop()
+
+            '''
+            if random.choice([0,1]) == 1: # in
+                key = len(node_dict)
+                print("node in, key:", key)
+                if key < initial_node_num - 1:
+                    value = Server()
+                    node_dict[key] = value
+                    await node_dict[key].listen(port, ip)
+                    await node_dict[key].bootstrap([(ip, port-1)])
+                    port += 1
+                    await node_dict[key].set("key %s" % (key), "value %s" % (key))
+                else:
+                    print("node capacity full")
+            
+            print("node num:", len(node_dict))
+            '''
+
+        # time.sleep(1)
+
+        print(count, len(node_dict))
+        count += 1
         
         if esc:
             print("User pressed ESC")
             break
-        if success: # Calculate success rate
+
+        if cal_rate: # Calculate success rate
+            print("Calculate success rate")
             success_count = 0
             total_count = 0
 
@@ -90,23 +122,34 @@ async def run():
 
             success_rate = success_count / total_count
             print("Success rate: {:.2f}".format(success_rate))
+            cal_rate = False
+
+        if count == 1:
+            print("End.")
+            break
 
 
 # User input
 esc = False
-success = False
+cal_rate = False
 
-def KeyboardListener():
+def KeyboardListener_esc():
     global esc
-    global success
     keyboard.wait('esc')
     esc = True
-    keyboard.wait('s')
-    success = True
 
-t1 = threading.Thread(target=KeyboardListener)
+def KeyboardListener_success():
+    global cal_rate
+    keyboard.wait('s')
+    cal_rate = True
+
+t1 = threading.Thread(target=KeyboardListener_esc)
 t1.start()
+t2 = threading.Thread(target=KeyboardListener_success)
+t2.start()
 
 
 asyncio.run(run())
+
 t1.join()
+t2.join()
