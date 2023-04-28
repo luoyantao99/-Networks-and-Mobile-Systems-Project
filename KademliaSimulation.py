@@ -15,27 +15,27 @@ def get_local_ip():
     s.close()
     return ip
 
-async def create_and_bootstrap_node(port, bootstrap_node):
-    node = Server()
-    await node.listen(port)
-    await node.bootstrap(bootstrap_node)
-    return node
+# async def create_and_bootstrap_node(port, bootstrap_node):
+#     node = Server()
+#     await node.listen(port)
+#     await node.bootstrap(bootstrap_node)
+#     return node
 
 
-async def set_key_value(node, key, value):
-    await node.set(key, value)
+# async def set_key_value(node, key, value):
+#     await node.set(key, value)
 
 
-async def get_value(node, key):
-    return await node.get(key)
+# async def get_value(node, key):
+#     return await node.get(key)
 
 
-def get_random_node(nodes):
-    return random.choice(list(nodes.values()))
+# def get_random_node(nodes):
+#     return random.choice(list(nodes.values()))
 
 
-def get_random_key():
-    return "key {}".format(random.randint(1, 100))
+# def get_random_key():
+#     return "key {}".format(random.randint(1, 100))
 
 
 async def run():
