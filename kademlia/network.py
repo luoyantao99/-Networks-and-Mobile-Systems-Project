@@ -45,6 +45,12 @@ class Server:
         self.refresh_loop = None
         self.save_state_loop = None
 
+    def retrieve_storage(self):
+        if type(self.storage) == type(ForgetfulStorage()):
+            return self.storage.retrieve_data()
+        else:
+            return self.storage
+
     def stop(self):
         if self.transport is not None:
             self.transport.close()

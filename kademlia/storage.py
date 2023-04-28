@@ -51,6 +51,9 @@ class ForgetfulStorage(IStorage):
         self.data = OrderedDict()
         self.ttl = ttl
 
+    def retrieve_data(self):
+        return self.data
+
     def __setitem__(self, key, value):
         if key in self.data:
             del self.data[key]
