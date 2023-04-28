@@ -8,13 +8,17 @@ import keyboard
 import time
 
 
-# def get_local_ip():
-#     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#     s.connect(("8.8.8.8", 80))
-#     ip = s.getsockname()[0]
-#     print("Local IP:", ip)
-#     s.close()
-#     return ip
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    ip = s.getsockname()[0]
+    print("Local IP:", ip)
+    s.close()
+    return ip
+
+
+def get_local_ip_mac():
+    return "0.0.0.0"
 
 
 async def create_and_bootstrap_node(port, bootstrap_node):
@@ -45,7 +49,8 @@ async def run():
     initial_node_num = 100
     initial_node = Server()
     await initial_node.listen(8479)
-    # ip = get_local_ip()
+    ip = get_local_ip()
+    # ip = get_local_ip_mac()
     port = 8480
 
     # initial
@@ -53,8 +58,8 @@ async def run():
         key = i
         value = Server()
         node_dict[key] = value
-        await node_dict[key].listen(port, '0.0.0.0')
-        await node_dict[key].bootstrap([('0.0.0.0', port-1)])
+        await node_dict[key].listen(port, ip)
+        await node_dict[key].bootstrap([(ip, port-1)])
         port += 1
         await node_dict[key].set("key %s" % (key), "value %s" % (key))
     # print("Setting complete")
@@ -86,8 +91,8 @@ async def run():
             print("node in, key:", key)
             value = Server()
             node_dict[key] = value
-            await node_dict[key].listen(port, '0.0.0.0')
-            await node_dict[key].bootstrap([('0.0.0.0', port-1)])
+            await node_dict[key].listen(port, ip)
+            await node_dict[key].bootstrap([(ip, port-1)])
             port += 1
             await node_dict[key].set("key %s" % (key), "value %s" % (key))
 
