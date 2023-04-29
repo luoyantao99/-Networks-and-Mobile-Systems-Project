@@ -55,66 +55,69 @@ async def run():
 
     # initial
     for i in range(initial_node_num):
-        key = i
+        '''key for node_dict and port can be the same, to reduce further calculation'''
+        key = port
         value = Server()
         node_dict[key] = value
         await node_dict[key].listen(port, ip)
-        await node_dict[key].bootstrap([(ip, port-1)])
+
+        # choose random node as bootstrap node
+        random_bootstrap_node = random.randint(8479, port - 1)
+        await node_dict[key].bootstrap([(ip, random_bootstrap_node)])
         port += 1
         await node_dict[key].set("key %s" % (key), "value %s" % (key))
     # print("Setting complete")
     # print(node_dict[0].retrieve_storage().values())
     # print(node_dict[0].bootstrappable_neighbors())
 
-    churn_rate = 0.2  # Change the churn rate as needed
-    churn_count = int(len(node_dict) * churn_rate)
-
     global esc
     global cal_rate
 
     count = 0
-    # global key_in_node_dict
-    key_in_node_dict = initial_node_num
-    # global starting_port
-    starting_port = port
 
+    # global starting_port
+    churn_starting_port = port
+
+    # Change the period as needed to change churn rate
     churn_period_in_second = 15
 
     while True:
         # Simulate node churn
-        async def concurrent_churn(key, port):
+        async def concurrent_churn(port):
             if len(node_dict) == 0:
                 print("No node survived")
                 return
-            # out
 
+            # out
             churned_node_key = random.choice(list(node_dict.keys()))
             churned_node = node_dict.pop(churned_node_key)
             churned_node.stop()
             print("node out")
 
             # in
-            # key = key
+            key = port
             print("node in, key:", key)
             value = Server()
             node_dict[key] = value
             await node_dict[key].listen(port, ip)
-            await node_dict[key].bootstrap([(ip, 8479)])
+            random_bootstrap_node = random.choice(list(node_dict.keys()))
+            await node_dict[key].bootstrap([(ip, random_bootstrap_node)])
             port += 1
             await node_dict[key].set("key %s" % (key), "value %s" % (key))
 
-        async def call_concurrent_churn(key_in_node_dict, starting_port):
+        async def call_concurrent_churn(churn_starting_port):
 
             # several churn running concurrently, mimicing churning serveral nodes in 1 second
-            await asyncio.gather(concurrent_churn(key_in_node_dict + 1, starting_port + 1), concurrent_churn(key_in_node_dict + 2, starting_port + 2), concurrent_churn(key_in_node_dict + 3, starting_port + 3), concurrent_churn(key_in_node_dict + 4, starting_port + 4))
+            await asyncio.gather(concurrent_churn(churn_starting_port + 1), concurrent_churn(churn_starting_port + 2), concurrent_churn(churn_starting_port + 3), concurrent_churn(churn_starting_port + 4))
 
         # record the time
         start_time = time.time()
 
-        await call_concurrent_churn(key_in_node_dict, starting_port)
+        await call_concurrent_churn(churn_starting_port)
+
+        # make sure that port number increased properly to avoid conflict
         concurrent_churn_number = 4
-        key_in_node_dict = key_in_node_dict + concurrent_churn_number
-        starting_port = starting_port + concurrent_churn_number
+        churn_starting_port = churn_starting_port + concurrent_churn_number
 
         # record the time
         end_time = time.time()
