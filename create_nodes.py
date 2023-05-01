@@ -13,13 +13,7 @@ NODE_NUM = 30
 LIFETIME_MAX = 180  #second
 LIFETIME_MIN = 30  #second
 PORT_BASE = 9468
-Node_Ports = multiprocessing.Manager().list()
-Ports_Available = multiprocessing.Manager().list()
 
-
-# initial 
-for i in range(NODE_NUM):
-    Ports_Available.append(i + PORT_BASE)
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -50,7 +44,6 @@ def create_node(Ports_Available, Node_Ports):
     loop.run_until_complete(server.listen(port))
 
     lifetime = random.randint(LIFETIME_MIN, LIFETIME_MAX)
-    # start_time = time.time()
 
     print("Created a node on port:{}, life time:{}".format(port, lifetime))
 
@@ -101,7 +94,6 @@ def connect_node(Ports_Available, Node_Ports):
     loop.run_until_complete(server.bootstrap([bootstrap_node]))
 
     lifetime = random.randint(LIFETIME_MIN, LIFETIME_MAX)
-    #start_time = time.time()
 
     print("Created a node on port:{}, connect to:{}, life time:{}".format(port, neighbor, lifetime))
 
@@ -123,15 +115,27 @@ def connect_node(Ports_Available, Node_Ports):
 
 lock = multiprocessing.Lock()
 
-t1 = multiprocessing.Process(target=create_node, args=(Ports_Available, Node_Ports))
-t1.start()
+def main():
+    Node_Ports = multiprocessing.Manager().list()
+    Ports_Available = multiprocessing.Manager().list()
 
-while len(Node_Ports) == 0:
-    time.sleep(1)
+    # initial 
+    for i in range(NODE_NUM):
+        Ports_Available.append(i + PORT_BASE)
 
-while True:
-    t2 = multiprocessing.Process(target=connect_node, args=(Ports_Available, Node_Ports))
-    t2.start()
+    t1 = multiprocessing.Process(target=create_node, args=(Ports_Available, Node_Ports))
+    t1.start()
 
-    time.sleep(2)
+    while len(Node_Ports) == 0:
+        time.sleep(1)
 
+    while True:
+        t2 = multiprocessing.Process(target=connect_node, args=(Ports_Available, Node_Ports))
+        t2.start()
+
+        time.sleep(2)
+
+
+if __name__ == "__main__":
+    multiprocessing.freeze_support()
+    main()
