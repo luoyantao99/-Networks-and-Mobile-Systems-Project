@@ -13,6 +13,5 @@ python3 create_nodes.py
 
 Then, start the benchmark program: 
 ```
-python3 
-set_get.py 
+python3 set_get.py 
 ```
