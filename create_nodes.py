@@ -11,7 +11,7 @@ from kademlia.network import Server
 
 NODE_NUM = 30
 LIFETIME_MAX = 180  #second
-LIFETIME_MIN = 30  #second
+LIFETIME_MIN = 160  #second
 PORT_BASE = 9468
 
 
