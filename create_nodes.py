@@ -1,10 +1,7 @@
-import argparse
-import logging
 import asyncio
 import random
 import socket
 import time
-import threading
 import multiprocessing
 from kademlia.network import Server
 import numpy as np
@@ -25,8 +22,6 @@ def get_local_ip():
 
 
 LOCAL_IP = get_local_ip()
-
-#
 
 
 def create_node(Ports_Available, Node_Ports):
@@ -70,7 +65,7 @@ def create_node(Ports_Available, Node_Ports):
         # print(Ports_Available)
 
 
-#
+
 def connect_node(Ports_Available, Node_Ports):
     lock.acquire()
     if len(Ports_Available) == 0:
@@ -97,8 +92,7 @@ def connect_node(Ports_Available, Node_Ports):
 
     lifetime = int(np.random.normal(LIFETIME_MAX, LIFETIME_MAX/10))
 
-    print("Created a node on port:{}, connect to:{}, life time:{}".format(
-        port, neighbor, lifetime))
+    print("Created a node on port:{}, connect to:{}, life time:{}".format(port, neighbor, lifetime))
 
     try:
         loop.run_until_complete(asyncio.sleep(lifetime))
@@ -127,16 +121,14 @@ def main():
     for i in range(NODE_NUM):
         Ports_Available.append(i + PORT_BASE)
 
-    t1 = multiprocessing.Process(
-        target=create_node, args=(Ports_Available, Node_Ports))
+    t1 = multiprocessing.Process(target=create_node, args=(Ports_Available, Node_Ports))
     t1.start()
 
     while len(Node_Ports) == 0:
         time.sleep(1)
 
     while True:
-        t2 = multiprocessing.Process(
-            target=connect_node, args=(Ports_Available, Node_Ports))
+        t2 = multiprocessing.Process(target=connect_node, args=(Ports_Available, Node_Ports))
         t2.start()
 
         time.sleep(2)
