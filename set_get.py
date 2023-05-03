@@ -19,8 +19,7 @@ LOCAL_IP = get_local_ip()
 
 
 handler = logging.StreamHandler()
-formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 log = logging.getLogger('kademlia')
 log.addHandler(handler)
@@ -47,11 +46,7 @@ async def Get(port, key):
     server.stop()
     return result
 
-# asyncio.run(Set(9477, "aa", "bb"))
 
-# print("===================================================")
-
-# print(asyncio.run(Get(9487, "aa")))
 
 
 NODE_NUM = 30
@@ -88,11 +83,8 @@ for count in range(TEST_ROUND):
     if result == value:
         success_count += 1
 
-    # time.sleep(ROUND_INTERVAL)
 
 
-print("success:{}, total:{}, success rate:{:.2f}%".format(
-    success_count, TEST_ROUND, success_count / TEST_ROUND * 100.))
+print("success:{}, total:{}, success rate:{:.2f}%".format(success_count, TEST_ROUND, success_count / TEST_ROUND * 100.))
 print("get time:", get_time)
-print("total get time:{}, average get time:{}".format(
-    total_get_time, total_get_time / TEST_ROUND))
+print("total get time:{}, average get time:{}".format(total_get_time, total_get_time / TEST_ROUND))
