@@ -7,11 +7,11 @@ import time
 import threading
 import multiprocessing
 from kademlia.network import Server
+import numpy as np
 
 
-NODE_NUM = 30
-LIFETIME_MAX = 180  #second
-LIFETIME_MIN = 160  #second
+NODE_NUM = 100
+LIFETIME_MAX = 180  # second
 PORT_BASE = 9468
 
 
@@ -27,6 +27,8 @@ def get_local_ip():
 LOCAL_IP = get_local_ip()
 
 #
+
+
 def create_node(Ports_Available, Node_Ports):
     port = Ports_Available[0]
 
@@ -43,7 +45,7 @@ def create_node(Ports_Available, Node_Ports):
     #print("port->", port)
     loop.run_until_complete(server.listen(port))
 
-    lifetime = random.randint(LIFETIME_MIN, LIFETIME_MAX)
+    lifetime = int(np.random.normal(LIFETIME_MAX, LIFETIME_MAX/10))
 
     print("Created a node on port:{}, life time:{}".format(port, lifetime))
 
@@ -64,17 +66,17 @@ def create_node(Ports_Available, Node_Ports):
         lock.release()
 
         print("Node {} exited after {} seconds".format(port, lifetime))
-        #print(Node_Ports)
-        #print(Ports_Available)
+        # print(Node_Ports)
+        # print(Ports_Available)
 
 
-# 
+#
 def connect_node(Ports_Available, Node_Ports):
     lock.acquire()
     if len(Ports_Available) == 0:
         lock.release()
         return
-    
+
     port = random.choice(Ports_Available)
     neighbor = random.choice(Node_Ports)
 
@@ -84,18 +86,19 @@ def connect_node(Ports_Available, Node_Ports):
 
     new_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(new_loop)
-    
+
     loop = asyncio.get_event_loop()
     server = Server()
     #print("port->", port, "connect->", neighbor)
     loop.run_until_complete(server.listen(port))
-    
+
     bootstrap_node = (LOCAL_IP, neighbor)
     loop.run_until_complete(server.bootstrap([bootstrap_node]))
 
-    lifetime = random.randint(LIFETIME_MIN, LIFETIME_MAX)
+    lifetime = int(np.random.normal(LIFETIME_MAX, LIFETIME_MAX/10))
 
-    print("Created a node on port:{}, connect to:{}, life time:{}".format(port, neighbor, lifetime))
+    print("Created a node on port:{}, connect to:{}, life time:{}".format(
+        port, neighbor, lifetime))
 
     try:
         loop.run_until_complete(asyncio.sleep(lifetime))
@@ -115,22 +118,25 @@ def connect_node(Ports_Available, Node_Ports):
 
 lock = multiprocessing.Lock()
 
+
 def main():
     Node_Ports = multiprocessing.Manager().list()
     Ports_Available = multiprocessing.Manager().list()
 
-    # initial 
+    # initial
     for i in range(NODE_NUM):
         Ports_Available.append(i + PORT_BASE)
 
-    t1 = multiprocessing.Process(target=create_node, args=(Ports_Available, Node_Ports))
+    t1 = multiprocessing.Process(
+        target=create_node, args=(Ports_Available, Node_Ports))
     t1.start()
 
     while len(Node_Ports) == 0:
         time.sleep(1)
 
     while True:
-        t2 = multiprocessing.Process(target=connect_node, args=(Ports_Available, Node_Ports))
+        t2 = multiprocessing.Process(
+            target=connect_node, args=(Ports_Available, Node_Ports))
         t2.start()
 
         time.sleep(2)
