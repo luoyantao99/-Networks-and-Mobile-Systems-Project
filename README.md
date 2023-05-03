@@ -1,6 +1,7 @@
 # Networks-and-Mobile-Systems-Project
 
-## Installation
+## Prerequisite
+This Kademlia benchmark requires a working kademlia implementation which can be installed using the following: 
 ```
 pip install kademlia
 ```
