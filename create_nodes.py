@@ -40,6 +40,7 @@ def create_node(Ports_Available, Node_Ports):
     #print("port->", port)
     loop.run_until_complete(server.listen(port))
 
+    np.random.seed(port)
     lifetime = int(np.random.normal(LIFETIME_MAX, LIFETIME_MAX/10))
 
     print("Created a node on port:{}, life time:{}".format(port, lifetime))
@@ -90,6 +91,7 @@ def connect_node(Ports_Available, Node_Ports):
     bootstrap_node = (LOCAL_IP, neighbor)
     loop.run_until_complete(server.bootstrap([bootstrap_node]))
 
+    np.random.seed(port)
     lifetime = int(np.random.normal(LIFETIME_MAX, LIFETIME_MAX/10))
 
     print("Created a node on port:{}, connect to:{}, life time:{}".format(port, neighbor, lifetime))
