@@ -8,7 +8,7 @@ import numpy as np
 
 
 NODE_NUM = 100
-LIFETIME_MAX = 180  # second
+LIFETIME_AVG = 180  # second
 PORT_BASE = 9468
 
 
@@ -40,7 +40,7 @@ def create_node(Ports_Available, Node_Ports):
     #print("port->", port)
     loop.run_until_complete(server.listen(port))
 
-    lifetime = int(np.random.normal(LIFETIME_MAX, LIFETIME_MAX/10))
+    lifetime = random.randint(LIFETIME_AVG*0.9, LIFETIME_AVG*1.1)
 
     print("Created a node on port:{}, life time:{}".format(port, lifetime))
 
