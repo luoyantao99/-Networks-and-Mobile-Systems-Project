@@ -182,6 +182,9 @@ class RoutingTable:
         # we should never be here, but make linter happy
         return None
 
+
+    # original kademlia find_neighbors algorithm using nearest xor distance
+    '''
     def find_neighbors(self, node, k=None, exclude=None):
         k = k or self.ksize
         nodes = []
@@ -192,4 +195,23 @@ class RoutingTable:
             if len(nodes) == k:
                 break
 
+        #print("================>>>>>>",list(map(operator.itemgetter(1), heapq.nsmallest(k, nodes))))
         return list(map(operator.itemgetter(1), heapq.nsmallest(k, nodes)))
+    '''   
+
+    # new kademlia find_neighbors algorithm using oldest nodes first
+    def find_neighbors(self, node, k=None, exclude=None):
+        k = k or self.ksize
+        nodes = []
+        for neighbor in TableTraverser(self, node):
+            notexcluded = exclude is None or not neighbor.same_home_as(exclude)
+            if neighbor.id != node.id and notexcluded:
+                nodes.append(neighbor)
+
+        # Sort the nodes by their timestamp (age), with the oldest nodes first
+        nodes.sort(key=lambda n: n.timestamp)
+
+        # Return the k oldest nodes
+        #print("====================>", nodes[:k])
+        return nodes[:k]
+    

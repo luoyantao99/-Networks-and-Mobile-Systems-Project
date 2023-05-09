@@ -1,5 +1,6 @@
 from operator import itemgetter
 import heapq
+import time
 
 
 class Node:
@@ -22,6 +23,8 @@ class Node:
         self.ip = ip  # pylint: disable=invalid-name
         self.port = port
         self.long_id = int(node_id.hex(), 16)
+
+        self.timestamp = time.time()  # Add this line
 
     def same_home_as(self, node):
         return self.ip == node.ip and self.port == node.port
