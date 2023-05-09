@@ -7,8 +7,9 @@ from kademlia.network import Server
 import numpy as np
 
 
-NODE_NUM = 100
-LIFETIME_MAX = 180  # second
+NODE_NUM = 30
+LIFETIME_MAX = 300  #second
+LIFETIME_MIN = 30  #second
 PORT_BASE = 9468
 
 
@@ -40,8 +41,9 @@ def create_node(Ports_Available, Node_Ports):
     #print("port->", port)
     loop.run_until_complete(server.listen(port))
 
-    np.random.seed(port)
-    lifetime = int(np.random.normal(LIFETIME_MAX, LIFETIME_MAX/10))
+    # np.random.seed(port)
+    # lifetime = int(np.random.normal(LIFETIME_MAX, LIFETIME_MAX/10))
+    lifetime = random.randint(LIFETIME_MIN, LIFETIME_MAX)
 
     print("Created a node on port:{}, life time:{}".format(port, lifetime))
 
@@ -91,8 +93,9 @@ def connect_node(Ports_Available, Node_Ports):
     bootstrap_node = (LOCAL_IP, neighbor)
     loop.run_until_complete(server.bootstrap([bootstrap_node]))
 
-    np.random.seed(port)
-    lifetime = int(np.random.normal(LIFETIME_MAX, LIFETIME_MAX/10))
+    # np.random.seed(port)
+    # lifetime = int(np.random.normal(LIFETIME_MAX, LIFETIME_MAX/10))
+    lifetime = random.randint(LIFETIME_MIN, LIFETIME_MAX)
 
     print("Created a node on port:{}, connect to:{}, life time:{}".format(port, neighbor, lifetime))
 
