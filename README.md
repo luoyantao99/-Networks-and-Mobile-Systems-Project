@@ -5,6 +5,11 @@ This Kademlia benchmark requires a working kademlia implementation which can be 
 ```
 pip install kademlia
 ```
+Find Kademlia installation location using 
+```
+pip list -v
+```
+Replace node.py and routing.py with our edited version
 
 ## Running Benchmark
 In order to run the benchmark, first start the simulated Kademlia network: 
