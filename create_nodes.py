@@ -5,12 +5,16 @@ import time
 import multiprocessing
 from kademlia.network import Server
 import numpy as np
+import os
+import platform
 
 
 NODE_NUM = 30
 LIFETIME_MAX = 300  #second
 LIFETIME_MIN = 30  #second
 PORT_BASE = 9468
+
+SAVE_FILE = True
 
 
 def get_local_ip():
@@ -36,7 +40,7 @@ def create_node(Ports_Available, Node_Ports):
     new_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(new_loop)
 
-    loop = asyncio.get_event_loop()
+    loop = new_loop #asyncio.get_event_loop()
     server = Server()
     #print("port->", port)
     loop.run_until_complete(server.listen(port))
@@ -47,8 +51,16 @@ def create_node(Ports_Available, Node_Ports):
 
     print("Created a node on port:{}, life time:{}".format(port, lifetime))
 
+    f = open("data" + os.path.sep + str(port) + ".txt", "a+")
     try:
-        loop.run_until_complete(asyncio.sleep(lifetime))
+        # loop.run_until_complete(asyncio.sleep(lifetime))
+        for i in range(lifetime):
+            loop.run_until_complete(asyncio.sleep(1))
+            # nodes = server.protocol.router.get_all_distance(server.node)
+            curtime = time.time()
+            if(SAVE_FILE):
+                print(time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(curtime)), server.node.port, 
+                      curtime - server.node.timestamp, len(server.protocol.storage.data), file=f)
     except KeyboardInterrupt:
         pass
     finally:
@@ -63,6 +75,7 @@ def create_node(Ports_Available, Node_Ports):
         Ports_Available.append(port)
         lock.release()
 
+        f.close()
         print("Node {} exited after {} seconds".format(port, lifetime))
         # print(Node_Ports)
         # print(Ports_Available)
@@ -74,7 +87,7 @@ def connect_node(Ports_Available, Node_Ports):
     if len(Ports_Available) == 0:
         lock.release()
         return
-
+    
     port = random.choice(Ports_Available)
     neighbor = random.choice(Node_Ports)
 
@@ -84,8 +97,7 @@ def connect_node(Ports_Available, Node_Ports):
 
     new_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(new_loop)
-
-    loop = asyncio.get_event_loop()
+    loop = new_loop# asyncio.get_event_loop()
     server = Server()
     #print("port->", port, "connect->", neighbor)
     loop.run_until_complete(server.listen(port))
@@ -99,8 +111,16 @@ def connect_node(Ports_Available, Node_Ports):
 
     print("Created a node on port:{}, connect to:{}, life time:{}".format(port, neighbor, lifetime))
 
+    f = open("data" + os.path.sep + str(port) + ".txt", "a+")
     try:
-        loop.run_until_complete(asyncio.sleep(lifetime))
+        # loop.run_until_complete(asyncio.sleep(lifetime))
+        for i in range(lifetime):
+            loop.run_until_complete(asyncio.sleep(1))
+            # nodes = server.protocol.router.get_all_distance(server.node)
+            curtime = time.time()
+            if(SAVE_FILE):
+                print(time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(curtime)), server.node.port, 
+                      curtime - server.node.timestamp, len(server.protocol.storage.data), file=f)
     except KeyboardInterrupt:
         pass
     finally:
@@ -112,6 +132,7 @@ def connect_node(Ports_Available, Node_Ports):
         Ports_Available.append(port)
         lock.release()
 
+        f.close()
         print("Node {} exited after {} seconds".format(port, lifetime))
 
 
@@ -140,5 +161,7 @@ def main():
 
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
+    if(platform.system() == "Windows"):
+        multiprocessing.freeze_support()
     main()
+    
