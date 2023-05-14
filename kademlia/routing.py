@@ -205,7 +205,6 @@ class RoutingTable:
         hybrid = True
         k = k or self.ksize
         nodes = []
-        churn_rate = 0.1
 
         for neighbor in TableTraverser(self, node):
             notexcluded = exclude is None or not neighbor.same_home_as(exclude)
@@ -214,7 +213,7 @@ class RoutingTable:
 
         if(hybrid):
             # Calculate the distance threshold based on the formula
-            distance_threshold = ((2 ** 160) / 2) * (1 + churn_rate)
+            distance_threshold = (2 ** 160) / 2
 
             if distance_threshold is not None:
                 # Filter nodes based on distance threshold
