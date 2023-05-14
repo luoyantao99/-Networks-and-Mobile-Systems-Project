@@ -2,6 +2,7 @@ import heapq
 import time
 import operator
 import asyncio
+import math
 
 from itertools import chain
 from collections import OrderedDict
@@ -182,10 +183,57 @@ class RoutingTable:
         # we should never be here, but make linter happy
         return None
 
-
+    
     # original kademlia find_neighbors algorithm using nearest xor distance
-    '''
+    # def find_neighbors(self, node, k=None, exclude=None):
+    #     k = k or self.ksize
+    #     nodes = []
+    #     for neighbor in TableTraverser(self, node):
+    #         notexcluded = exclude is None or not neighbor.same_home_as(exclude)
+    #         if neighbor.id != node.id and notexcluded:
+    #             heapq.heappush(nodes, (node.distance_to(neighbor), neighbor))
+    #         if len(nodes) == k:
+    #             break
+
+    #     #print("================>>>>>>",list(map(operator.itemgetter(1), heapq.nsmallest(k, nodes))))
+    #     return list(map(operator.itemgetter(1), heapq.nsmallest(k, nodes)))
+    
+
+
+    # new kademlia find_neighbors algorithm using oldest nodes first
     def find_neighbors(self, node, k=None, exclude=None):
+        hybrid = True
+        k = k or self.ksize
+        nodes = []
+        churn_rate = 0.1
+
+        for neighbor in TableTraverser(self, node):
+            notexcluded = exclude is None or not neighbor.same_home_as(exclude)
+            if neighbor.id != node.id and notexcluded:
+                nodes.append(neighbor)
+
+        if(hybrid):
+            # Calculate the distance threshold based on the formula
+            distance_threshold = ((2 ** 160) / 2) * (1 + churn_rate)
+
+            if distance_threshold is not None:
+                # Filter nodes based on distance threshold
+                nodes = [n for n in nodes if node.distance_to(n) < distance_threshold]
+
+        # Sort the nodes by their timestamp (age), with the oldest nodes first
+        nodes.sort(key=lambda n: n.timestamp)
+
+        if(hybrid and len(nodes) < k):
+            nearest_nodes = self.find_nearest_neighbors(node, k, exclude)
+            for nearest_node in nearest_nodes:
+                if nearest_node not in nodes:
+                    nodes.append(nearest_node)
+
+        # Return the k oldest nodes
+        #print("====================>", nodes[:k])
+        return nodes[:k]
+    
+    def find_nearest_neighbors(self, node, k=None, exclude=None):
         k = k or self.ksize
         nodes = []
         for neighbor in TableTraverser(self, node):
@@ -195,23 +243,19 @@ class RoutingTable:
             if len(nodes) == k:
                 break
 
-        #print("================>>>>>>",list(map(operator.itemgetter(1), heapq.nsmallest(k, nodes))))
         return list(map(operator.itemgetter(1), heapq.nsmallest(k, nodes)))
-    '''   
+    
 
-    # new kademlia find_neighbors algorithm using oldest nodes first
-    def find_neighbors(self, node, k=None, exclude=None):
-        k = k or self.ksize
+    def get_all_distance(self, node, exclude=None):
         nodes = []
+        #neighbor_count = 1
         for neighbor in TableTraverser(self, node):
             notexcluded = exclude is None or not neighbor.same_home_as(exclude)
             if neighbor.id != node.id and notexcluded:
-                nodes.append(neighbor)
+                #print(neighbor_count, (neighbor, node.distance_to(neighbor)))
+                #neighbor_count+=1
+                nodes.append((neighbor, node.distance_to(neighbor)))
 
-        # Sort the nodes by their timestamp (age), with the oldest nodes first
-        nodes.sort(key=lambda n: n.timestamp)
+        return nodes
 
-        # Return the k oldest nodes
-        #print("====================>", nodes[:k])
-        return nodes[:k]
-    
+
